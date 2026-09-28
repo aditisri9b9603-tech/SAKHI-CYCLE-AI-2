@@ -90,6 +90,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             {t.nav.sakhiAi}
           </button>
           <button
+            onClick={() => handleNavClick('partner')}
+            className="hover:text-[#E25574] transition-colors whitespace-nowrap cursor-pointer text-[#E25574] font-semibold"
+          >
+            {t.nav.partner}
+          </button>
+          <button
+            onClick={() => handleNavClick('media')}
+            className="hover:text-[#E25574] transition-colors whitespace-nowrap cursor-pointer"
+          >
+            {t.nav.media}
+          </button>
+          <button
             onClick={() => handleNavClick('care')}
             className="hover:text-[#E25574] transition-colors whitespace-nowrap cursor-pointer"
           >
@@ -200,6 +212,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Sparkles className="w-4 h-4 text-[#E25574]" />
               {t.nav.sakhiAi}
+            </button>
+            <button
+              onClick={() => handleNavClick('partner')}
+              className="text-left px-3 py-2 rounded-lg hover:bg-[#FDF2F4] hover:text-[#E25574] text-[#E25574] font-semibold transition-colors"
+            >
+              {t.nav.partner}
+            </button>
+            <button
+              onClick={() => handleNavClick('media')}
+              className="text-left px-3 py-2 rounded-lg hover:bg-[#FDF2F4] hover:text-[#E25574] transition-colors"
+            >
+              {t.nav.media}
             </button>
             <button
               onClick={() => handleNavClick('care')}

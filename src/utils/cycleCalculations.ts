@@ -1,4 +1,12 @@
-import { CyclePhase, CycleSettings, DoctorSpecialist, PeriodProduct, ForumPost } from '../types/cycle';
+import {
+  CyclePhase,
+  CycleSettings,
+  DoctorSpecialist,
+  PeriodProduct,
+  ForumPost,
+  EducationalVideo,
+  SpotifyPlaylist,
+} from '../types/cycle';
 
 export interface CalculatedCycleState {
   currentCycleDay: number;
@@ -205,7 +213,110 @@ export const VERIFIED_DOCTORS: DoctorSpecialist[] = [
   },
 ];
 
-// Safe community forum seed discussions
+// Educational videos on menstrual biology and partner guidance
+export const EDUCATIONAL_VIDEOS: EducationalVideo[] = [
+  {
+    id: 'video-1',
+    titleKey: 'videoMenstruationScience',
+    youtubeId: 'ayzN5zkJU74',
+    channel: 'TED-Ed · Emma Bryce',
+    duration: '5 min',
+    topic: 'Endocrine & Menstrual Biology',
+    fallbackUrl: 'https://www.youtube.com/watch?v=ayzN5zkJU74',
+  },
+  {
+    id: 'video-2',
+    titleKey: 'videoCrampsScience',
+    youtubeId: 'vXrQ_FhZmos',
+    channel: 'TED-Ed · Dr. Elizabeth Cox',
+    duration: '4 min',
+    topic: 'Prostaglandins & Cramp Relief',
+    fallbackUrl: 'https://www.youtube.com/watch?v=vXrQ_FhZmos',
+  },
+  {
+    id: 'video-3',
+    titleKey: 'videoPartnerEmpathy',
+    youtubeId: '2_CPbOIO3oc',
+    channel: 'Menstrual Health Alliance',
+    duration: '6 min',
+    topic: 'Supporting Your Partner Mindfully',
+    fallbackUrl: 'https://www.youtube.com/watch?v=2_CPbOIO3oc',
+  },
+];
+
+// Curated Spotify playlists for healing and Bollywood comfort
+export const SPOTIFY_PLAYLISTS: SpotifyPlaylist[] = [
+  {
+    id: 'playlist-bollywood-chill',
+    titleKey: 'spotifyBollywoodTitle',
+    descriptionKey: 'spotifyBollywoodDesc',
+    embedUrl: 'https://open.spotify.com/embed/playlist/37i9dQZF1DX6XE7HirlUTE?utm_source=generator&theme=0',
+    fallbackUrl: 'https://open.spotify.com/playlist/37i9dQZF1DX6XE7HirlUTE',
+    genre: 'Bollywood Acoustic',
+  },
+  {
+    id: 'playlist-peaceful-piano',
+    titleKey: 'spotifyPianoTitle',
+    descriptionKey: 'spotifyPianoDesc',
+    embedUrl: 'https://open.spotify.com/embed/playlist/37i9dQZF1DX4sWSpwq3LiO?utm_source=generator&theme=0',
+    fallbackUrl: 'https://open.spotify.com/playlist/37i9dQZF1DX4sWSpwq3LiO',
+    genre: 'Peaceful Piano & Strings',
+  },
+  {
+    id: 'playlist-deep-ambient',
+    titleKey: 'spotifyAmbientTitle',
+    descriptionKey: 'spotifyAmbientDesc',
+    embedUrl: 'https://open.spotify.com/embed/playlist/37i9dQZF1DWZeKCadgRdKQ?utm_source=generator&theme=0',
+    fallbackUrl: 'https://open.spotify.com/playlist/37i9dQZF1DWZeKCadgRdKQ',
+    genre: 'Ambient Healing Vibrations',
+  },
+];
+
+// Interactive Partner Cycle Quiz for Flo Partners inspired education
+export interface PartnerQuizItem {
+  id: string;
+  questionKey: string;
+  options: { key: string; text: string; textHi: string }[];
+  correctOptionKey: string;
+  explanationKey: string;
+}
+
+export const PARTNER_QUIZ_ITEMS: PartnerQuizItem[] = [
+  {
+    id: 'quiz-1',
+    questionKey: 'quizQ1',
+    options: [
+      { key: 'A', text: 'Menstrual Phase (Days 1-5)', textHi: 'मासिक धर्म चरण (दिन १-५)' },
+      { key: 'B', text: 'Follicular Phase (Days 6-12)', textHi: 'फॉलिक्युलर चरण (दिन ६-१२)' },
+      { key: 'C', text: 'Luteal Phase (Days 17-28)', textHi: 'ल्यूटियल चरण (दिन १७-२८)' },
+    ],
+    correctOptionKey: 'B',
+    explanationKey: 'quizExp1',
+  },
+  {
+    id: 'quiz-2',
+    questionKey: 'quizQ2',
+    options: [
+      { key: 'A', text: 'Progesterone', textHi: 'प्रोजेस्टेरोन (Progesterone)' },
+      { key: 'B', text: 'Melatonin', textHi: 'मेलाटोनिन (Melatonin)' },
+      { key: 'C', text: 'Testosterone', textHi: 'टेस्टोस्टेरोन (Testosterone)' },
+    ],
+    correctOptionKey: 'A',
+    explanationKey: 'quizExp2',
+  },
+  {
+    id: 'quiz-3',
+    questionKey: 'quizQ3',
+    options: [
+      { key: 'A', text: 'Ask them to ignore it and power through', textHi: 'दर्द को अनदेखा करने के लिए कहें' },
+      { key: 'B', text: 'Offer a heated pad, warm tea, and listen with empathy', textHi: 'गर्म सिकाई थैली, गर्म चाय दें और प्रेम से सुनें' },
+      { key: 'C', text: 'Plan a heavy hiking trip', textHi: 'कठिन यात्रा की योजना बनाएं' },
+    ],
+    correctOptionKey: 'B',
+    explanationKey: 'quizExp3',
+  },
+];
+
 export const INITIAL_FORUM_POSTS: ForumPost[] = [
   {
     id: 'post-1',

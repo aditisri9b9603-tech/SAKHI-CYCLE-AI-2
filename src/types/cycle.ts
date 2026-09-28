@@ -73,3 +73,50 @@ export interface CycleBuddyConfig {
   sharePhase: boolean;
   shareSymptoms: boolean;
 }
+
+export interface PartnerPermissions {
+  sharePhase: boolean; // General phase name only, e.g. "Follicular Phase"
+  shareSupportTips: boolean; // Personalized suggestions on how to support
+  shareFertileWindow: boolean; // Estimated window (never pregnancy guarantee)
+  customSupportNotes: string; // Optional user note like "Craving dark chocolate & chamomile tea"
+}
+
+export interface PartnerConfig {
+  isPaired: boolean;
+  partnerCode: string;
+  partnerName: string;
+  permissions: PartnerPermissions;
+  connectedAt: string | null;
+}
+
+export interface EducationalVideo {
+  id: string;
+  titleKey: string;
+  youtubeId: string;
+  channel: string;
+  duration: string;
+  topic: string;
+  fallbackUrl: string;
+}
+
+export interface SpotifyPlaylist {
+  id: string;
+  titleKey: string;
+  descriptionKey: string;
+  embedUrl: string;
+  fallbackUrl: string;
+  genre: string;
+}
+
+export interface AppointmentRequest {
+  id: string;
+  doctorId: string;
+  doctorName: string;
+  clinic: string;
+  patientName: string;
+  patientContact: string;
+  preferredDate: string;
+  consultationType: 'in-clinic' | 'teleconsult';
+  status: 'pending' | 'confirmed' | 'cancelled';
+  createdAt: string;
+}

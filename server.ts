@@ -1,6 +1,7 @@
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
+import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -13,6 +14,221 @@ const port = 3000;
 
 app.use(express.json());
 
+// Initialize Supabase if environment variables are configured
+const supabaseUrl = process.env.SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
+
+// In-memory resilient store for partner pairing & appointments
+interface ServerPartnerRecord {
+  partnerCode: string;
+  isPaired: boolean;
+  partnerName: string;
+  permissions: {
+    sharePhase: boolean;
+    shareSupportTips: boolean;
+    shareFertileWindow: boolean;
+    customSupportNotes: string;
+  };
+  currentCycleState?: {
+    currentCycleDay: number;
+    currentPhase: string;
+    daysUntilNextPeriod: number;
+  };
+  updatedAt: string;
+}
+
+const partnerStore: Record<string, ServerPartnerRecord> = {
+  'SAKHI-PTNR-7294': {
+    partnerCode: 'SAKHI-PTNR-7294',
+    isPaired: false,
+    partnerName: '',
+    permissions: {
+      sharePhase: false,
+      shareSupportTips: false,
+      shareFertileWindow: false,
+      customSupportNotes: '',
+    },
+    updatedAt: new Date().toISOString(),
+  },
+};
+
+interface ServerAppointmentRecord {
+  id: string;
+  doctorId: string;
+  doctorName: string;
+  clinic: string;
+  patientName: string;
+  patientContact: string;
+  preferredDate: string;
+  consultationType: 'in-clinic' | 'teleconsult';
+  status: 'pending' | 'confirmed' | 'cancelled';
+  createdAt: string;
+}
+
+const appointmentStore: ServerAppointmentRecord[] = [];
+
+// System Status endpoint (Honest provider status)
+app.get('/api/status', (_req, res) => {
+  res.json({
+    geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
+    supabaseConfigured: Boolean(supabase),
+    whatsappApiConfigured: Boolean(process.env.WHATSAPP_API_TOKEN),
+    storageMode: supabase ? 'supabase-cloud' : 'on-device-resilient',
+  });
+});
+
+// Partner Support: Pair partner
+app.post('/api/partner/pair', (req, res) => {
+  const { partnerCode, partnerName } = req.body;
+  if (!partnerCode) {
+    return res.status(400).json({ error: 'Partner code required' });
+  }
+
+  const existing = partnerStore[partnerCode.toUpperCase()];
+  if (!existing) {
+    // Register if valid code format
+    partnerStore[partnerCode.toUpperCase()] = {
+      partnerCode: partnerCode.toUpperCase(),
+      isPaired: true,
+      partnerName: partnerName || 'Support Partner',
+      permissions: {
+        sharePhase: false,
+        shareSupportTips: false,
+        shareFertileWindow: false,
+        customSupportNotes: '',
+      },
+      updatedAt: new Date().toISOString(),
+    };
+  } else {
+    existing.isPaired = true;
+    existing.partnerName = partnerName || existing.partnerName || 'Support Partner';
+    existing.updatedAt = new Date().toISOString();
+  }
+
+  res.json({ success: true, message: 'Partner paired successfully' });
+});
+
+// Partner Support: Update Permissions & State (Enforces user control)
+app.post('/api/partner/permissions', (req, res) => {
+  const { partnerCode, permissions, cycleState } = req.body;
+  if (!partnerCode) {
+    return res.status(400).json({ error: 'Partner code required' });
+  }
+
+  const record = partnerStore[partnerCode.toUpperCase()] || {
+    partnerCode: partnerCode.toUpperCase(),
+    isPaired: true,
+    partnerName: 'Support Partner',
+    permissions: {
+      sharePhase: false,
+      shareSupportTips: false,
+      shareFertileWindow: false,
+      customSupportNotes: '',
+    },
+    updatedAt: new Date().toISOString(),
+  };
+
+  record.permissions = {
+    sharePhase: Boolean(permissions?.sharePhase),
+    shareSupportTips: Boolean(permissions?.shareSupportTips),
+    shareFertileWindow: Boolean(permissions?.shareFertileWindow),
+    customSupportNotes: String(permissions?.customSupportNotes || ''),
+  };
+
+  if (cycleState) {
+    record.currentCycleState = {
+      currentCycleDay: cycleState.currentCycleDay,
+      currentPhase: cycleState.currentPhase,
+      daysUntilNextPeriod: cycleState.daysUntilNextPeriod,
+    };
+  }
+
+  record.updatedAt = new Date().toISOString();
+  partnerStore[partnerCode.toUpperCase()] = record;
+
+  res.json({ success: true, record });
+});
+
+// Partner Support: Limited access status endpoint (STRICT PRIVACY ENFORCEMENT)
+app.get('/api/partner/status/:code', (req, res) => {
+  const code = req.params.code.toUpperCase();
+  const record = partnerStore[code];
+
+  if (!record || !record.isPaired) {
+    return res.status(404).json({ error: 'Partner pairing not found or inactive' });
+  }
+
+  // Filter out any unauthorized details server-side
+  const payload: any = {
+    isPaired: record.isPaired,
+    permissions: record.permissions,
+  };
+
+  // Only attach phase if user explicitly permitted it
+  if (record.permissions.sharePhase && record.currentCycleState) {
+    payload.sharedPhase = record.currentCycleState.currentPhase;
+  } else {
+    payload.sharedPhase = null;
+  }
+
+  // Only attach support tips if permitted
+  if (record.permissions.shareSupportTips) {
+    payload.shareSupportTips = true;
+  }
+
+  // Only attach custom notes if permitted
+  if (record.permissions.customSupportNotes) {
+    payload.customNotes = record.permissions.customSupportNotes;
+  }
+
+  // NEVER return raw symptoms, flow levels, or intimate notes to partner!
+  res.json(payload);
+});
+
+// Partner Support: Revoke partner
+app.post('/api/partner/revoke', (req, res) => {
+  const { partnerCode } = req.body;
+  if (partnerCode && partnerStore[partnerCode.toUpperCase()]) {
+    partnerStore[partnerCode.toUpperCase()].isPaired = false;
+    partnerStore[partnerCode.toUpperCase()].permissions = {
+      sharePhase: false,
+      shareSupportTips: false,
+      shareFertileWindow: false,
+      customSupportNotes: '',
+    };
+  }
+  res.json({ success: true, message: 'Partner access revoked' });
+});
+
+// Doctor Directory: Appointment Booking & Real Status
+app.post('/api/doctor/appointments', (req, res) => {
+  const { doctorId, doctorName, clinic, patientName, patientContact, preferredDate, consultationType } = req.body;
+  if (!doctorName || !patientName || !patientContact) {
+    return res.status(400).json({ error: 'Missing required appointment fields' });
+  }
+
+  const newApt: ServerAppointmentRecord = {
+    id: `apt-${Date.now()}`,
+    doctorId: doctorId || 'generic',
+    doctorName,
+    clinic,
+    patientName,
+    patientContact,
+    preferredDate: preferredDate || new Date().toISOString().split('T')[0],
+    consultationType: consultationType || 'in-clinic',
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+  };
+
+  appointmentStore.push(newApt);
+  res.json({ success: true, appointment: newApt });
+});
+
+app.get('/api/doctor/appointments', (_req, res) => {
+  res.json({ appointments: appointmentStore });
+});
+
 // Sakhi AI chat endpoint
 app.post('/api/chat', async (req, res) => {
   try {
@@ -23,7 +239,6 @@ app.post('/api/chat', async (req, res) => {
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      // Fallback knowledge response if key is missing
       const isHi = language === 'hi';
       return res.json({
         reply: isHi

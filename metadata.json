@@ -1,0 +1,6 @@
+{
+  "name": "Sakhi Cycle - Mindful Menstrual Health & Cycle Tracking",
+  "description": "A warm, reassuring menstrual cycle tracking companion inspired by Flo's storytelling. Features cycle phase predictions, daily symptom logs, personal insights, Sakhi AI guidance, doctor directory, and privacy-first local storage in English and Hindi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
